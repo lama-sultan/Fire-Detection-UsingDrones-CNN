@@ -1,0 +1,47 @@
+!pip install ultralytics
+#Installs the Ultralytics library for YOLO object detection.
+from ultralytics import YOLO
+#Imports the YOLO class from Ultralytics.
+!yolo task= detect mode = train model = yolov8n.pt data = /content/drive/MyDrive/fire/data.yaml epochs = 10 imgsz = 640
+#Executes YOLO in detection mode with training
+#yolov8n n= nando use it because we want speed in processing
+!pip install cvzone
+#Installs the cvzone library.
+from ultralytics import YOLO
+from google.colab.patches import cv2_imshow
+import cvzone#image classificatin/object detection
+import cv2#video analyzing
+import math
+#mports necessary libraries for video processing.
+
+
+cap = cv2.VideoCapture('/content/fire2.mp4')
+model = YOLO('/content/runs/detect/train/weights/best.pt')
+#Initializes a video capture for a video file and loads a pre-trained YOLO model.
+classnames = ['fire']
+#Defines a list of class names (in this case, only 'fire').
+while True:#Processes each frame from the video in an infinite loop.
+    ret, frame = cap.read()
+    frame = cv2.resize(frame, (648, 488))#Resizes the frame.
+    result = model(frame, stream=True)#Uses the YOLO model to detect objects in the frame.
+
+    for info in result:
+        boxes = info.boxes
+        for box in boxes:
+            confidence = box.conf[0]
+            confidence = math.ceil(confidence * 100)
+            Class = int(box.cls[0])
+            if confidence > 50:
+                x1, y1, x2, y2 = box.xyxy[0]
+                x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 5)
+                #Draws rectangles and text on the frame based on the detected objects.
+                cvzone.putTextRect(frame, f'{classnames[Class]} {confidence}%', [x1 + 8, y1 + 100],
+                                   scale=1.5, thickness=2)#Displays the annotated frame.
+
+    cv2_imshow(frame)
+    if cv2.waitKey(1) & 0xFF == 27:#If the 'Esc' key is pressed, the loop breaks.
+        break
+
+cap.release()#Releases the video capture.
+cv2.destroyAllWindows()
